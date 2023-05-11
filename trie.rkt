@@ -101,14 +101,21 @@
 
     
 (define (add-string [trie : Trie] [word : (Listof Char)]) : Trie
-  (local [(define chr (first word))]
-    (local [(define str (rest word))]
-      (cond
-        [(empty? str) (trie-increment! trie)]
-        [else (type-case Trie (list-ref (child-children trie) (char->index chr))
+  (cond
+    [(empty? word) (trie-increment! trie)]
+    [else (local [(define chr (first word))]
+            (local [(define str (rest word))]
+              (type-case Trie (list-ref (child-children trie) (char->index chr))
                          [(empty-child num) (child (child-value trie) (child-freq trie) (trie-insert! (char->index chr) (add-string (make-trie chr) str) (child-children trie)))]
                          [(child value freq children) (child (child-value trie) (child-freq trie) (trie-insert! (char->index chr) (add-string (list-ref (child-children trie) (char->index chr)) str) (child-children trie)))]
-                         )]))))
+                         )))]))
       
-
-
+(define (find-string [trie : Trie] [word : (Listof Char)]) : Trie
+  (cond
+    [(empty? word) trie]
+    [else (local [(define chr (first word))]
+            (local [(define str (rest word))]
+              (type-case Trie (list-ref (child-children trie) (char->index chr))
+                         [(empty-child num) (empty-child 1)]
+                         [(child value freq children) (find-string (list-ref (child-children trie) (char->index chr)) str)]
+                         )))]))
