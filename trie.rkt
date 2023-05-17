@@ -1,6 +1,5 @@
 #lang plait
 
-
 (define (char->index c)
   (if (char=? c #\a) 0
       (if (char=? c #\b) 1
@@ -119,3 +118,6 @@
                          [(empty-child num) (empty-child 1)]
                          [(child value freq children) (find-string (list-ref (child-children trie) (char->index chr)) str)]
                          )))]))
+
+
+
