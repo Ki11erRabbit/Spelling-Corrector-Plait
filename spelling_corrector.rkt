@@ -24,21 +24,29 @@
 
 
 
-#;(define (suggest-word! corrector [word : String]) : Trie
+(define (suggest-word! corrector [word : String]) : String
   (type-case Trie (find-string corrector (string->list word))
-             [(child value freq children) (child)]
-             [(empty-child number) (local [(define edit_dist1 (make-hash (gen-edit-dist word)))])]))
-
-
-
+             [(child value freq children) word]
+             [(empty-child number) (local [(define edit_dist1 (make-hash (gen-edit-dist word)))]
+                                     (local [(define possible_words (filter (lambda (x) (child? (snd x))) (map (lambda (x) (pair (list->string x) (find-string corrector x))) (hash-keys edit_dist1))))]
+                                       (case (length possible_words)
+                                         [(0) (local [(define edit_dist2 (make-hash (gen-edit-dist2 (hash-keys edit_dist1))))]
+                                                (local [(define possible_words2 (filter (lambda (x) (child? (snd x))) (map (lambda (x) (pair (list->string x) (find-string corrector x))) (hash-keys edit_dist2))))]
+                                                  (case (length possible_words2)
+                                                    [(0) "No Suggestions"]
+                                                    [else (fst (maximum-func (lambda (x) (child-freq (snd x))) wrap possible_words2))])))]
+                                         [else (fst (maximum-func (lambda (x) (child-freq (snd x))) wrap possible_words))])
+                                       ))]))
 
 
 (define (gen-edit-dist [word : String])
-  (make-hash (map (lambda (item) (pair (list->string item) item)) (append (gen-deletion (string->list word) 0)
+  (map (lambda (item) (pair item item)) (append (gen-deletion (string->list word) 0)
           (append (gen-transposition (string->list word))
           (append (gen-substitution (string->list word))
-          (gen-insertion (string->list word))))))))
+          (gen-insertion (string->list word)))))))
 
+(define (gen-edit-dist2 edit-dist1) : (Listof ('a * 'b))
+  (flatten-list (map (lambda (item) (gen-edit-dist (list->string item))) edit-dist1)))
 
 
 (define (gen-deletion [word : (Listof Char)] [pos : Number]) : (Listof (Listof Char))
@@ -83,7 +91,7 @@
   (ins-helper1 word (string->list "abcdefghijklmnopqrstuvwxyz") 0))
 
 (define (ins-helper1 [word : (Listof Char)] [alph : (Listof Char)] [pos : Number]) : (Listof (Listof Char))
-  (if (= pos (length alph))
+  (if (= pos (length word))
       (ins-helper-end word alph)
       (append (ins-helper2 word alph pos 0) (ins-helper1 word alph (+ 1 pos)))))
 

@@ -43,6 +43,30 @@
       (drop (- n 1) (rest lst))
       lst))
 
+(define (flatten-list [lst : (Listof (Listof 'a))]) : (Listof 'a)
+  (cond
+    [(empty? lst) empty]
+    [else (append (first lst) (flatten-list (rest lst)))]))
+
+(define (maximum lst)
+  (max-helper (first lst) (rest lst)))
+
+(define (max-helper item lst)
+    (cond
+        [(empty? lst) item]
+        [else (max-helper (max item (first lst)) (rest lst))]))
+
+
+(define (maximum-func [f : (('a * Trie) -> Number)] [f2 : (Number ('a * Trie) -> ('a * Trie))] lst)
+  (max-func-helper f f2 (first lst) (rest lst)))
+
+(define (max-func-helper [f : (('a * Trie) -> Number)] [f2 : (Number ('a * Trie) -> ('a * Trie))] item lst)
+    (cond
+        [(empty? lst) item]
+        [else (max-func-helper f f2 (f2 (max (f item) (f (first lst))) item) (rest lst))]))
+
+(define (wrap num [value : ('a * Trie)]) : ('a * Trie)
+  value)
 
 ;(define (make-children [val : Trie])
 ;  (make-vector 27 val))
@@ -78,6 +102,17 @@
    [freq : Number]
    [children : (Listof Trie)]))
 
+(define (child-empty? trie)
+  (type-case Trie trie
+    [(empty-child num) #t]
+    [(child value freq children) #f]))
+
+(define (a-child? trie)
+  (type-case Trie trie
+    [(empty-child num) #f]
+    [(child value freq children) #t]))
+
+
 (define (make-trie-node value freq)
   (child value freq (build-list 26 (lambda (v) (empty-child 1)))))
 
@@ -111,7 +146,9 @@
       
 (define (find-string [trie : Trie] [word : (Listof Char)]) : Trie
   (cond
-    [(empty? word) trie]
+    [(empty? word) (if (= (child-freq trie) 0)
+                   (empty-child 1)
+                   trie)]
     [else (local [(define chr (first word))]
             (local [(define str (rest word))]
               (type-case Trie (list-ref (child-children trie) (char->index chr))
