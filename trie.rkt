@@ -31,7 +31,6 @@
 
 
 
-;(define-type-alias Children (Listof(Optionof Trie)))
 
 (define (take [n : Number] [lst : (Listof 'a)]) : (Listof 'a)
   (if (> n 0)
@@ -43,58 +42,50 @@
       (drop (- n 1) (rest lst))
       lst))
 
+; Helper function that turns a list of lists into a single list
 (define (flatten-list [lst : (Listof (Listof 'a))]) : (Listof 'a)
   (cond
     [(empty? lst) empty]
     [else (append (first lst) (flatten-list (rest lst)))]))
 
+; max function but for lists
 (define (maximum lst)
   (max-helper (first lst) (rest lst)))
 
+; helper for maximum to find the max of a list
 (define (max-helper item lst)
     (cond
         [(empty? lst) item]
         [else (max-helper (max item (first lst)) (rest lst))]))
 
+; This is my way to replicate the Ord typeclass in Haskell
 
-(define (maximum-func [f : (('a * Trie) -> Number)] [f2 : (Number ('a * Trie) -> ('a * Trie))] lst)
+; f: a function that takes a tuple of 'a and Trie and returns a number
+; f2: a function that takes a number and a tuple of 'a and Trie and returns a tuple of 'a and Trie
+; lst: a list of tuples of 'a and Trie
+; returns the tuple of 'a and Trie with the maximum value of 'a
+(define (maximum-func [f : (('a * Trie) -> Number)] [f2 : (Number ('a * Trie) -> ('a * Trie))] [lst : (Listof ('a * Trie))]) : ('a * Trie)
   (max-func-helper f f2 (first lst) (rest lst)))
 
-(define (max-func-helper [f : (('a * Trie) -> Number)] [f2 : (Number ('a * Trie) -> ('a * Trie))] item lst)
+; helper for maximum-func to find the max of a list
+; f: a function that takes a tuple of 'a and Trie and returns a number
+; f2: a function that takes a number and a tuple of 'a and Trie and returns a tuple of 'a and Trie
+; item: the current max tuple of 'a and Trie
+; lst: a list of tuples of 'a and Trie
+(define (max-func-helper [f : (('a * Trie) -> Number)] [f2 : (Number ('a * Trie) -> ('a * Trie))] [item : ('a * Trie) ] [lst : (Listof ('a * Trie))]) : ('a * Trie)
     (cond
         [(empty? lst) item]
         [else (max-func-helper f f2 (f2 (max (f item) (f (first lst))) item) (rest lst))]))
 
+; a function that takes a number and a tuple of 'a and Trie and returns a tuple of 'a and Trie
 (define (wrap num [value : ('a * Trie)]) : ('a * Trie)
   value)
 
-;(define (make-children [val : Trie])
-;  (make-vector 27 val))
-
-;(define-type Trie
-;  (empty-child[num : Number])
-;  (child
-;   [value : Char]
-;   [freq : Number]
-;   [children : (Vectorof Trie)]))
-
-;(define (make-trie-node value freq)
-;  (child value freq (make-vector 26 (empty-child 1))))
-
-;(define (make-trie)
-;  (child #\0 -1 (make-vector 26 (empty-child 1))))
-
-;(define (trie-add! pos val vec)
-;  (vector-set! vec pos val))
-
-;(define (insert-at-pos [pos : Number] [val : Trie] [vec : (Vectorof Trie)]) : (Vectorof Trie)
-;  (vector-set! vec pos val))
-
-
-
+; initializes the list of nodes for a trie
 (define (make-children [val : Trie])
   (build-list 27 (lambda (v) val)))
 
+; the data type for a trie data structure
 (define-type Trie
   (empty-child[num : Number])
   (child
@@ -102,38 +93,38 @@
    [freq : Number]
    [children : (Listof Trie)]))
 
-(define (child-empty? trie)
-  (type-case Trie trie
-    [(empty-child num) #t]
-    [(child value freq children) #f]))
-
-(define (a-child? trie)
-  (type-case Trie trie
-    [(empty-child num) #f]
-    [(child value freq children) #t]))
-
-
-(define (make-trie-node value freq)
+; creates an empty trie node
+; value: the character that the node represents
+; freq: the number of times the node has been visited
+; returns a trie node with the given value and frequency
+(define (make-trie-node [value : Char] [freq : Number]) : Trie
   (child value freq (build-list 26 (lambda (v) (empty-child 1)))))
 
-(define (make-trie value)
+
+; creates an empty trie node with just a value
+; value: the character that the node represents
+; returns a trie node with the given value and frequency
+(define (make-trie [value : Char]) : Trie
   (child value 0 (build-list 26 (lambda (v) (empty-child 1)))))
 
-(define (trie-add! pos val vec)
-  (vector-set! vec pos val))
-
-;(define (insert-at-pos [pos : Number] [val : Trie] [vec : (Vectorof Trie)]) : (Vectorof Trie)
-;  (vector-set! vec pos val))
-
+; inserts a trie node into a list of trie nodes
+; pos: the position in the list to insert the node
+; val: the node to insert
+; lst: the list to insert the node into
+; returns the list with the node inserted
 (define (trie-insert! [pos : Number] [val : Trie] [lst : (Listof Trie)]) : (Listof Trie)
   (append (take pos lst) (cons val (drop (+ 1 pos) lst))))
-  
 
-
-(define (trie-increment! node)
+; increments the frequency of a trie node
+; node: the node to increment
+; returns the node with the frequency incremented
+(define (trie-increment! [node : Trie]) : Trie
   (child (child-value node) (+ 1 (child-freq node)) (child-children node)))
 
-    
+; adds a Listof Char to a trie
+; trie: the trie to add the string to
+; word: the string to add to the trie
+; returns the trie with the string added
 (define (add-string [trie : Trie] [word : (Listof Char)]) : Trie
   (cond
     [(empty? word) (trie-increment! trie)]
@@ -143,7 +134,11 @@
                          [(empty-child num) (child (child-value trie) (child-freq trie) (trie-insert! (char->index chr) (add-string (make-trie chr) str) (child-children trie)))]
                          [(child value freq children) (child (child-value trie) (child-freq trie) (trie-insert! (char->index chr) (add-string (list-ref (child-children trie) (char->index chr)) str) (child-children trie)))]
                          )))]))
-      
+
+; finds a string in a trie
+; trie: the trie to find the string in
+; word: the string to find in the trie
+; returns the trie with the string added
 (define (find-string [trie : Trie] [word : (Listof Char)]) : Trie
   (cond
     [(empty? word) (if (= (child-freq trie) 0)
